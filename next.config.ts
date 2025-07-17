@@ -1,5 +1,7 @@
 import type { NextConfig } from 'next';
 
+import { env } from '@/env';
+
 const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
@@ -7,7 +9,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  ...(process.env.NODE_ENV === 'development' && {
+  ...(env.NODE_ENV === 'development' && {
     logging: {
       fetches: {
         fullUrl: true,
