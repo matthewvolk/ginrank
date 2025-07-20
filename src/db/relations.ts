@@ -7,7 +7,7 @@ import {
   gamePlayers,
   hands,
   handPlayers,
-} from './schema';
+} from '@/db/schema';
 
 export const playerRelations = relations(players, ({ many }) => ({
   handsWon: many(hands, { relationName: 'player_wins' }),
