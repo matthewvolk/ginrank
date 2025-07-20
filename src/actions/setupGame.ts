@@ -1,31 +1,22 @@
 'use server';
 
+import { parseWithZod } from '@conform-to/zod/v4';
 import { redirect } from 'next/navigation';
-import { z } from 'zod/v4';
 
 import { db } from '@/db/drizzle';
 import { gamePlayers, games, gameSettings, players } from '@/db/schema';
+import { GameSetupSchema } from '@/lib/schemas/GameSetupSchema';
 
-const schema = z.object({
-  player1: z.string().min(1),
-  player2: z.string().min(1),
-  pointValueCents: z.coerce.number().min(1),
-  boxValueCents: z.coerce.number().min(1),
-  winScore: z.coerce.number().min(1),
-});
+export async function setupGame(_prevState: unknown, formData: FormData) {
+  const submission = parseWithZod(formData, {
+    schema: GameSetupSchema,
+  });
 
-export async function setupGame(
-  _prevState: { message: string },
-  formData: FormData,
-) {
-  const { success, data, error } = schema.safeParse(
-    Object.fromEntries(formData),
-  );
-
-  if (!success) {
-    console.error(error);
-    return { message: 'Invalid form data' };
+  if (submission.status !== 'success') {
+    return submission.reply();
   }
+
+  const data = submission.value;
 
   const [player1, player2] = await db
     .insert(players)
