@@ -7,4 +7,5 @@ export const env = createEnv({
     DATABASE_URL: z.url(),
   },
   experimental__runtimeEnv: {},
+  skipValidation: process.env.CI === 'true',
 });
