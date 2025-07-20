@@ -1,4 +1,4 @@
-import { PlayerSetup } from '@/components/player-setup';
+import { GameSetup } from '@/components/game-setup';
 
 export default function Home() {
   return (
@@ -11,7 +11,7 @@ export default function Home() {
         </p>
       </header>
 
-      <PlayerSetup />
+      <GameSetup />
     </main>
   );
 }
