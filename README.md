@@ -1,6 +1,6 @@
-# Two Bucks a Box
+# GinRank
 
-> _♥️♣️♦️♠️_
+Scorecard and ranking system for [Gin Rummy](https://en.wikipedia.org/wiki/Gin_rummy).
 
 ## Technologies
 

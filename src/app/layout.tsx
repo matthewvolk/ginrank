@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Two Bucks a Box',
+  title: 'GinRank | Gin Rummy Scorecard and Ranking System',
 };
 
 export default function RootLayout({
