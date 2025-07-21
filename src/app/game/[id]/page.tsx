@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 
 import { CreateHand } from '@/components/create-hand';
+import { Scoresheet } from '@/components/scoresheet';
 import { db } from '@/db/drizzle';
 import { games } from '@/db/schema';
 
@@ -28,14 +29,16 @@ export default async function GamePage({ params }: GamePageProps) {
     notFound();
   }
 
-  const players = game.players
-    .map(({ player }) => player)
-    .filter((player) => player !== null);
+  const players = game.players.map(({ player }) => player);
 
   return (
     <div className="flex flex-col gap-4">
       <CreateHand gameId={game.id} players={players} />
-      <pre>{JSON.stringify(game, null, 2)}</pre>
+      <div className="flex flex-col gap-4 rounded-md border p-4">
+        <h2 className="text-lg font-bold">Game Settings</h2>
+        <pre>{JSON.stringify(game.settings, null, 2)}</pre>
+      </div>
+      <Scoresheet hands={game.hands} players={players} />
     </div>
   );
 }

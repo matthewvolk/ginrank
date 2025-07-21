@@ -6,6 +6,7 @@ import {
   timestamp,
   integer,
   primaryKey,
+  unique,
 } from 'drizzle-orm/pg-core';
 
 export const players = pgTable('players', {
@@ -32,20 +33,26 @@ export const games = pgTable('games', {
     .defaultNow(),
 });
 
-export const hands = pgTable('hands', {
-  id: uuid('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  gameId: uuid('game_id')
-    .notNull()
-    .references(() => games.id, { onDelete: 'cascade' }),
-  handNumber: integer('hand_number').notNull().unique(),
-  winnerId: uuid('winner_id').references(() => players.id),
-  points: integer('points').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const hands = pgTable(
+  'hands',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    gameId: uuid('game_id')
+      .notNull()
+      .references(() => games.id, { onDelete: 'cascade' }),
+    handNumber: integer('hand_number').notNull(),
+    winnerId: uuid('winner_id').references(() => players.id),
+    points: integer('points').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [unique().on(table.gameId, table.handNumber)],
+);
+
+export type SelectHand = InferSelectModel<typeof hands>;
 
 export const gameSettings = pgTable('game_settings', {
   gameId: uuid('game_id')
@@ -62,10 +69,14 @@ export const gameSettings = pgTable('game_settings', {
 export const gamePlayers = pgTable(
   'game_players',
   {
-    gameId: uuid('game_id').references(() => games.id, { onDelete: 'cascade' }),
-    playerId: uuid('player_id').references(() => players.id, {
-      onDelete: 'cascade',
-    }),
+    gameId: uuid('game_id')
+      .references(() => games.id, { onDelete: 'cascade' })
+      .notNull(),
+    playerId: uuid('player_id')
+      .references(() => players.id, {
+        onDelete: 'cascade',
+      })
+      .notNull(),
     joinedAt: timestamp('joined_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -76,10 +87,14 @@ export const gamePlayers = pgTable(
 export const handPlayers = pgTable(
   'hand_players',
   {
-    handId: uuid('hand_id').references(() => hands.id, { onDelete: 'cascade' }),
-    playerId: uuid('player_id').references(() => players.id, {
-      onDelete: 'cascade',
-    }),
+    handId: uuid('hand_id')
+      .references(() => hands.id, { onDelete: 'cascade' })
+      .notNull(),
+    playerId: uuid('player_id')
+      .references(() => players.id, {
+        onDelete: 'cascade',
+      })
+      .notNull(),
   },
   (table) => [primaryKey({ columns: [table.handId, table.playerId] })],
 );

@@ -22,6 +22,20 @@
       "when": 1753056958817,
       "tag": "0002_perfect_layla_miller",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1753067331777,
+      "tag": "0003_spotty_skaar",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1753067745380,
+      "tag": "0004_blue_vivisector",
+      "breakpoints": true
     }
   ]
 }
