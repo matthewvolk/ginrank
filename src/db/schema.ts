@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+import { InferSelectModel, sql } from 'drizzle-orm';
 import {
   pgTable,
   uuid,
@@ -17,6 +17,8 @@ export const players = pgTable('players', {
     .notNull()
     .defaultNow(),
 });
+
+export type SelectPlayer = InferSelectModel<typeof players>;
 
 export const games = pgTable('games', {
   id: uuid('id')
@@ -37,10 +39,8 @@ export const hands = pgTable('hands', {
   gameId: uuid('game_id')
     .notNull()
     .references(() => games.id, { onDelete: 'cascade' }),
-  handNumber: integer('hand_number').notNull(),
-  winnerId: uuid('winner_id')
-    .notNull()
-    .references(() => players.id),
+  handNumber: integer('hand_number').notNull().unique(),
+  winnerId: uuid('winner_id').references(() => players.id),
   points: integer('points').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
