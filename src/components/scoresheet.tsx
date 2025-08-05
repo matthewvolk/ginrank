@@ -1,50 +1,13 @@
 import { Fragment } from 'react';
 
-import type { SelectHand, SelectPlayer } from '@/db/schema';
-
-function buildScoresheet(players: SelectPlayer[], hands: SelectHand[]) {
-  const scoresheet = new Map<string, number[][]>(
-    players.map((player) => [player.id, []]),
-  );
-
-  for (const hand of hands) {
-    const playerId = hand.winnerId;
-
-    if (playerId) {
-      const playerScores = scoresheet.get(playerId);
-
-      if (playerScores) {
-        if (playerScores.length === 0) {
-          playerScores.push([hand.points]);
-        } else if (playerScores.length === 1) {
-          playerScores[0].push(hand.points);
-          playerScores.push([hand.points]);
-        } else if (playerScores.length === 2) {
-          playerScores[0].push(hand.points);
-          playerScores[1].push(hand.points);
-          playerScores.push([hand.points]);
-        } else {
-          playerScores[0].push(hand.points);
-          playerScores[1].push(hand.points);
-          playerScores[2].push(hand.points);
-        }
-      }
-    }
-  }
-
-  return scoresheet;
-}
+import type { SelectPlayer } from '@/db/schema';
 
 interface ScoresheetProps {
   players: SelectPlayer[];
-  hands: SelectHand[];
+  scoresheet: Map<string, number[][]>;
 }
 
-export async function Scoresheet({ players, hands }: ScoresheetProps) {
-  const scoresheet = buildScoresheet(players, hands);
-
-  console.dir(scoresheet, { depth: null });
-
+export async function Scoresheet({ players, scoresheet }: ScoresheetProps) {
   const maxRows = Math.max(
     ...Array.from(scoresheet.values()).map((scores) =>
       Math.max(...scores.map((score) => score.length)),

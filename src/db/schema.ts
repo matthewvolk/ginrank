@@ -66,6 +66,8 @@ export const gameSettings = pgTable('game_settings', {
     .defaultNow(),
 });
 
+export type SelectGameSettings = InferSelectModel<typeof gameSettings>;
+
 export const gamePlayers = pgTable(
   'game_players',
   {
