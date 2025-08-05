@@ -29,6 +29,8 @@ export function CreateHand({ gameId, players }: CreateHandProps) {
 
   return (
     <div className="rounded-md border p-4">
+      <h2 className="mb-4 text-lg font-bold">Record Hand</h2>
+
       <form
         {...getFormProps(form)}
         action={action}

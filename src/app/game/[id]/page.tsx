@@ -2,6 +2,8 @@ import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 
 import { CreateHand } from '@/components/create-hand';
+import { GameResults } from '@/components/game-results';
+import { GameSettings } from '@/components/game-settings';
 import { Scoresheet } from '@/components/scoresheet';
 import { db } from '@/db/drizzle';
 import {
@@ -11,37 +13,65 @@ import {
   type SelectPlayer,
 } from '@/db/schema';
 
-function buildScoresheet(players: SelectPlayer[], hands: SelectHand[]) {
+function buildScoresheet(
+  players: SelectPlayer[],
+  hands: SelectHand[],
+  winScore: number,
+) {
   const scoresheet = new Map<string, number[][]>(
-    players.map((player) => [player.id, []]),
+    players.map((p) => [p.id, []]),
+  );
+
+  const totals = new Map<string, number[]>(
+    players.map((p) => [p.id, [0, 0, 0]]),
   );
 
   for (const hand of hands) {
     const playerId = hand.winnerId;
+    if (!playerId) continue;
 
-    if (playerId) {
-      const playerScores = scoresheet.get(playerId);
+    const playerCols = scoresheet.get(playerId)!;
+    const playerTotals = totals.get(playerId)!;
 
-      if (playerScores) {
-        if (playerScores.length === 0) {
-          playerScores.push([hand.points]);
-        } else if (playerScores.length === 1) {
-          playerScores[0].push(hand.points);
-          playerScores.push([hand.points]);
-        } else if (playerScores.length === 2) {
-          playerScores[0].push(hand.points);
-          playerScores[1].push(hand.points);
-          playerScores.push([hand.points]);
-        } else {
-          playerScores[0].push(hand.points);
-          playerScores[1].push(hand.points);
-          playerScores[2].push(hand.points);
-        }
+    const opponentId = players.find((p) => p.id !== playerId)!.id;
+    const opponentTotals = totals.get(opponentId)!;
+
+    const activeCols = Math.min(playerCols.length + 1, 3);
+
+    for (let i = 0; i < activeCols; i++) {
+      if (!playerCols[i]) playerCols[i] = [];
+
+      if (playerTotals[i] >= winScore || opponentTotals[i] >= winScore) {
+        continue;
       }
+
+      playerCols[i].push(hand.points);
+      playerTotals[i] += hand.points;
     }
   }
 
   return scoresheet;
+}
+
+function accumulateUntilWin(values: number[], winScore: number) {
+  let total = 0;
+  let lastIndex = -1;
+
+  for (let i = 0; i < values.length; i++) {
+    total += values[i];
+    if (total >= winScore) {
+      lastIndex = i;
+      break;
+    }
+  }
+
+  if (lastIndex === -1) return null;
+
+  return {
+    points: total,
+    boxes: lastIndex + 1,
+    endIndex: lastIndex,
+  };
 }
 
 function evaluateGames(
@@ -60,29 +90,29 @@ function evaluateGames(
     const p1Col = scoresheet.get(p1)?.[gameIndex] ?? [];
     const p2Col = scoresheet.get(p2)?.[gameIndex] ?? [];
 
-    const p1Points = p1Col.reduce((a, b) => a + b, 0);
-    const p2Points = p2Col.reduce((a, b) => a + b, 0);
+    const p1Result = accumulateUntilWin(p1Col, settings.winScore);
+    const p2Result = accumulateUntilWin(p2Col, settings.winScore);
 
-    if (p1Points >= settings.winScore || p2Points >= settings.winScore) {
-      const winnerId = p1Points >= settings.winScore ? p1 : p2;
-
-      const winnerCol = winnerId === p1 ? p1Col : p2Col;
+    if (p1Result || p2Result) {
+      const winnerId = p1Result ? p1 : p2;
+      const winnerRes = p1Result ?? p2Result!;
       const loserCol = winnerId === p1 ? p2Col : p1Col;
 
-      const winnerPoints = winnerCol.reduce((a, b) => a + b, 0);
-      const winnerHands = winnerCol.length;
-      const loserHands = loserCol.length;
+      const winnerPoints = winnerRes.points;
+      const winnerBoxes = winnerRes.boxes;
 
-      const boxes = Math.max(0, winnerHands - loserHands);
+      const loserBoxes = Math.min(loserCol.length, winnerBoxes);
+
+      const extraBoxes = Math.max(0, winnerBoxes - loserBoxes);
       const payout =
         winnerPoints * settings.pointValueCents +
-        boxes * settings.boxValueCents;
+        extraBoxes * settings.boxValueCents;
 
       results.push({
         winnerId,
         gameIndex,
         points: winnerPoints,
-        boxes,
+        boxes: extraBoxes,
         payout,
       });
     }
@@ -116,20 +146,21 @@ export default async function GamePage({ params }: GamePageProps) {
 
   const players = game.players.map(({ player }) => player);
 
-  const scoresheet = buildScoresheet(players, game.hands);
+  const scoresheet = buildScoresheet(
+    players,
+    game.hands,
+    game.settings.winScore,
+  );
+  console.dir(scoresheet, { depth: null });
   const results = evaluateGames(scoresheet, game.settings);
 
   return (
     <div className="flex flex-col gap-4">
-      <CreateHand gameId={game.id} players={players} />
-      <div className="flex flex-col gap-4 rounded-md border p-4">
-        <h2 className="text-lg font-bold">Game Results</h2>
-        <pre>{JSON.stringify(results, null, 2)}</pre>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <CreateHand gameId={game.id} players={players} />
+        <GameSettings settings={game.settings} />
       </div>
-      <div className="flex flex-col gap-4 rounded-md border p-4">
-        <h2 className="text-lg font-bold">Game Settings</h2>
-        <pre>{JSON.stringify(game.settings, null, 2)}</pre>
-      </div>
+      <GameResults players={players} results={results} />
       <Scoresheet players={players} scoresheet={scoresheet} />
     </div>
   );
